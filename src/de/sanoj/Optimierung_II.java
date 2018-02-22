@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class Optimierung_II {
 
 	double[] xi = { -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5 }; // Gegebene X-Werte
-	double[] mi = { 80, 50, 31, 16, 5, 3, 5, 15, 29, 49, 78 }; // Gegebene
+	double[] mi = { 80, 50, 31, 16, 5, 3, 5, 16, 31, 50, 80 }; // Gegebene
 																// Y-Werte
 	double min, max; // Minimal und Maximalwerte, in denen
 	double delta = 0.001;
@@ -39,12 +39,14 @@ public class Optimierung_II {
 				prelambda = lambda;
 				first = false;
 			}else{
-				if(prevk.get(i-1).getBetrag() - k.getBetrag() == delta){
+				if(prevk.get(i-1).getBetrag() - k.getBetrag() <= delta && i > 100){
 					System.out.println("FINISHED AFTER "+i+" ITERATIONS!");
 					System.out.println("PreLambda: "+prelambda);
 					System.out.println("Lambda: "+lambda);
 					break;
 				}
+				System.out.println(prevk.get(i-1).getBetrag() - k.getBetrag());
+				System.out.println();
 			}
 
 			prevk.add(k);
