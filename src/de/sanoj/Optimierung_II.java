@@ -1,78 +1,101 @@
 package de.sanoj;
 
-import java.io.File;
-
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
+import java.util.ArrayList;
 
 public class Optimierung_II {
 
-	double[] xi = { 0, 1, 2, 3, 4, 5 };
-	double[] mi = { 0.1, 1.3, 4.2, 8.5, 15, 24 };
-	double k;
-	double min, max;
-	double delta;
-	
-	double minfehler;
-	double mink;
+	double[] xi = { -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5 }; // Gegebene X-Werte
+	double[] mi = { 80, 50, 31, 16, 5, 3, 5, 15, 29, 49, 78 }; // Gegebene
+																// Y-Werte
+	double min, max; // Minimal und Maximalwerte, in denen
+	double delta = 0.001;
+	ArrayList<Vektor> prevk = new ArrayList<Vektor>();
 
-	double f(double x) {
-		return k * (x * x);
+	Vektor k = new Vektor(1,1,1);
+	double minfehler; // Kleinster Fehler
+	Vektor mink; // Vektor, bei dem der Fehler am kleinsten ist.
+	boolean first = true; // true -> Erste runde; false -> nicht erste runde
+
+	// TODO: Fill in f
+	double f(double x, Vektor k) {
+		return k.getK1() * Math.pow(x, 2) + k.getK2() * x + k.getK3();
 	}
 
 	public Optimierung_II() {
-		delta = 0.01;
 		min = 0;
 		max = 2;
 		minfehler = 1000;
-		mink = min;
 	}
 	
-	public void start(){
-		for(double i = min; i <= max; i += delta){
-			k = i;
-			double tmpa = summe(xi.length);
-			System.out.println("K: "+k);
-			System.out.println("Fehler: "+Math.sqrt(tmpa/xi.length));
-			System.out.println();
-			if(tmpa < minfehler){
-				minfehler = tmpa;
-				mink = k;
+	double prelambda;
+
+	public void start() {
+		for (int i = 0; i < 100000; i++) {
+
+			
+			double lambda = Lambda(k);
+			
+			if(first){
+				prelambda = lambda;
+				first = false;
+			}else{
+				if(prevk.get(i-1).getBetrag() - k.getBetrag() == delta){
+					System.out.println("FINISHED AFTER "+i+" ITERATIONS!");
+					System.out.println("PreLambda: "+prelambda);
+					System.out.println("Lambda: "+lambda);
+					break;
+				}
+			}
+
+			prevk.add(k);
+
+			double a = k.getK1() - lambda * gradF(k).getK1();
+			double b = k.getK2() - lambda * gradF(k).getK2();
+			double c = k.getK3() - lambda * gradF(k).getK3();
+			k = new Vektor(a,b,c);
+			System.out.println(k);
+		}
+		System.out.println(k);
+	}
+
+	private double Lambda(Vektor k) {
+		double tmp = delta;
+		double min = 1000;// min tmp
+		double min2 = 0; // Lambda bei min tmp
+		boolean first = true;
+		for (; tmp < 100; tmp += delta) {
+			double a = k.getK1() - gradF(k).getK1();
+			double b = k.getK2() - gradF(k).getK2();
+			double c = k.getK3() - gradF(k).getK3();
+			Vektor klambda = new Vektor(a, b, c);
+			double tmp2 = F(klambda);
+			if (tmp2 < min || first) {
+				min = tmp2;
+				min2 = tmp;
+				first = false;
 			}
 		}
-		System.out.println("Effizientestes K = "+mink);
-		System.out.println("Fehler bei effizientestem K = "+Math.sqrt(minfehler/xi.length));
+
+		return min2;
 	}
-	
-	private double summe(int max){
+
+	private double F(Vektor k) {
 		double tmpn = 0.0;
-		for(int i2 = 0; i2 < max; i2++){
-			tmpn += Math.pow((f(xi[i2]) - mi[i2]), 2);
-			System.out.println("Fehlertemp(i="+(i2+1)+"): "+Math.pow((f(xi[i2]) - mi[i2]), 2));
+		for (int i2 = 0; i2 < mi.length; i2++) {
+			tmpn += Math.pow((f(xi[i2], k) - mi[i2]), 2);
+//			System.out.println("Fehlertemp(i=" + (i2 + 1) + "): " + Math.pow((f(xi[i2], k) - mi[i2]), 2));
 		}
 		return tmpn;
 	}
 
-	public static void main(String[] args) {
-//		Optimierung_I optimierung = new Optimierung_I();
-//		optimierung.start();
-		new Optimierung_II().start();
-		
-//		play(null, null);
+	private Vektor gradF(Vektor k) {
+		double a = (F(new Vektor(k.getK1() + delta, k.getK2(), k.getK3())) - F(k)) / delta;
+		double b = (F(new Vektor(k.getK1(), k.getK2() + delta, k.getK3())) - F(k)) / delta;
+		double c = (F(new Vektor(k.getK1(), k.getK2(), k.getK3() + delta)) - F(k)) / delta;
+		return new Vektor(a, b, c);
 	}
-	static Clip clip;
-	
-	private static void play(Object codeBase, String fileName) {
-        try {
-            clip = AudioSystem.getClip();  //<---
-            File file = new File(fileName + ".wav");
-            AudioInputStream ais = AudioSystem.getAudioInputStream(file);
-            clip.open(ais);
-            clip.start();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
 
+	public static void main(String[] args) {
+		new Optimierung_II().start();
+	}
 }
